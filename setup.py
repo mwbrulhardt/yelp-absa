@@ -1,9 +1,12 @@
 
+import os
+import zipfile
 from typing import List
 
 import pandas as pd
 import torch
 from bs4 import BeautifulSoup
+from kaggle.api.kaggle_api_extended import KaggleApi
 
 
 def preprocess(bs: BeautifulSoup) -> List[dict]:
@@ -43,6 +46,7 @@ def preprocess(bs: BeautifulSoup) -> List[dict]:
 
 if __name__ == "__main__":
 
+    # SemEval-2014
     path = "data/semeval2014"
 
     bs_train = BeautifulSoup(open(path + "/Restaurants_Train.xml", "r").read())
@@ -55,3 +59,31 @@ if __name__ == "__main__":
 
     for k in frames:
         frames[k].to_csv(path + f"/{k}.csv", index=False)
+
+    # Yelp
+    api = KaggleApi()
+    api.authenticate()
+
+    data_path = "data/yelp"
+
+    for name in ["business", "tip"]:
+
+        api.dataset_download_file(
+            dataset="yelp-dataset/yelp-dataset",
+            file_name=f"yelp_academic_dataset_{name}.json",
+            path=data_path
+        )
+
+        file_path = data_path + f"/yelp_academic_dataset_{name}.json.zip"
+
+        with zipfile.ZipFile(file_path, "r") as zp:
+            zp.extractall(data_path)
+
+        os.remove(file_path)
+
+        src = data_path + f"/yelp_academic_dataset_{name}.json"
+        tgt = data_path + f"/{name}.json"
+        os.rename(src, tgt)
+
+    # Models
+    os.mkdir("models")

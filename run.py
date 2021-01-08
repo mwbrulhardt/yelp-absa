@@ -126,7 +126,7 @@ def run(config: dict):
 
 
 @click.command()
-@click.option("--model", type=str)
+@click.option("--model", type=str, default="prajjwal1/bert-tiny")
 def main(model: str):
     config = {
         "model_name": model,
