@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 models/
-data/yelp
+data/*
+!data/semeval2014/*.xml

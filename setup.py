@@ -1,6 +1,7 @@
 
 import os
 import zipfile
+from pathlib import Path
 from typing import List
 
 import pandas as pd
@@ -65,25 +66,21 @@ if __name__ == "__main__":
     api.authenticate()
 
     data_path = "data/yelp"
+    api.dataset_download_files(
+        dataset="yelp-dataset/yelp-dataset",
+        path=data_path
+    )
 
-    for name in ["business", "tip"]:
+    zip_path = os.path.join(data_path, "yelp-dataset.zip")
+    with zipfile.ZipFile(zip_path, "r") as zp:
+        zp.extractall(data_path)
+    os.remove(zip_path)
 
-        api.dataset_download_file(
-            dataset="yelp-dataset/yelp-dataset",
-            file_name=f"yelp_academic_dataset_{name}.json",
-            path=data_path
-        )
-
-        file_path = data_path + f"/yelp_academic_dataset_{name}.json.zip"
-
-        with zipfile.ZipFile(file_path, "r") as zp:
-            zp.extractall(data_path)
-
-        os.remove(file_path)
-
-        src = data_path + f"/yelp_academic_dataset_{name}.json"
-        tgt = data_path + f"/{name}.json"
+    prefix = "yelp_academic_dataset_"
+    for name in os.listdir(data_path):
+        src = os.path.join(data_path, name)
+        tgt = os.path.join(data_path, name.replace(prefix, ""))
         os.rename(src, tgt)
 
     # Models
-    os.mkdir("models")
+    Path("models").mkdir(parents=True, exist_ok=True)

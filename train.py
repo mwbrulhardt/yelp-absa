@@ -1,5 +1,6 @@
 
 import os
+from pathlib import Path
 
 import click
 import numpy as np
@@ -23,9 +24,9 @@ def mcc(confusion: np.array) -> float:
     return num / den
 
 
-def load_data(path: str, model_name: str):
+def load_data(path: str, model_id: str):
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
 
     label_list = ["none", "negative", "neutral", "positive", "conflict"]
     label_map = {}
@@ -58,10 +59,13 @@ def load_data(path: str, model_name: str):
     return datasets["train"], datasets["test"]
 
 
-def train_absa(config: dict, model_name: str, data_dir: str):
+def train_absa(config: dict, model_id: str, data_dir: str):
+
+    model_name = model_id.replace("/", "-")
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=5)
+    model = AutoModelForSequenceClassification.from_pretrained(model_id, num_labels=5)
     model.train()
     model.to(device)
 
@@ -70,7 +74,7 @@ def train_absa(config: dict, model_name: str, data_dir: str):
         lr=config["lr"]
     )
 
-    train_set, test_set = load_data(data_dir, model_name)
+    train_set, test_set = load_data(data_dir, model_id)
 
     cutoff = int(0.8 * len(train_set))
     train_subset, val_subset = random_split(train_set, [cutoff, len(train_set) - cutoff])
@@ -149,6 +153,7 @@ def train_absa(config: dict, model_name: str, data_dir: str):
     test_loss = 0
     test_steps = 0
     confusion = np.zeros([5, 5])
+    model.eval()
 
     for i, (input_ids, attention_mask, labels) in enumerate(test_loader):
 
@@ -172,32 +177,40 @@ def train_absa(config: dict, model_name: str, data_dir: str):
             test_loss += loss.cpu().numpy()
             test_steps += 1
 
-    torch.save(model, f"./models/asba_{model_name.replace('/', '_')}.pt")
+    torch.save(model, f"./models/absa-{model_name}.pt")
     print("Finished training.")
 
     print("Test Results:")
     summary = dict(
-        model=model_name,
+        model=model_id,
         loss=(test_loss / test_steps),
         accuracy=confusion.trace() / confusion.sum().sum(),
         mcc=mcc(confusion)
     )
     print(summary)
 
+    labels = ["none", "negative", "neutral", "positive", "conflict"]
+    confusion = pd.DataFrame(confusion, columns=labels)
+    confusion.to_csv(f"data/{model_name}/confusion.csv", index=False)
+
 
 @click.command()
-@click.option("--model", type=str, default="prajjwal1/bert-tiny")
-@click.option("--epochs", type=int, default=10)
-@click.option("--batch_size", type=int, default=24)
+@click.option("--model-id", type=str, default="distilbert-base-uncased")
+@click.option("--epochs", type=int, default=4)
+@click.option("--batch-size", type=int, default=24)
 @click.option("--lr", type=float, default=2e-5)
-def main(model: str, epochs: int, batch_size: int, lr: float):
+def main(model_id: str, epochs: int, batch_size: int, lr: float):
+
+    model_name = model_id.replace("/", "-")
+    Path(f"data/{model_name}").mkdir(parents=True, exist_ok=True)
+
     train_absa(
         config={
             "epochs": epochs,
             "batch_size": batch_size,
             "lr": lr
         },
-        model_name=model,
+        model_id=model_id,
         data_dir=os.path.abspath("./data/semeval2014")
     )
 
