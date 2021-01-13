@@ -3,18 +3,17 @@ Exploring the Yelp dataset using Aspect-Based Sentiment Analysis.
 
 ## Installation
 
-To get started, first install all the required libraries using,
+To install all the required libraries run,
 ```sh
 $ pip install -r requirements.txt
 ```
 
 ## Part 1
 
-The following is code associated with the first article of the 2 part Medium series
+The following code is associated with the first Medium article of my 2 part series.
 
 ### Setup
-First run the setup script to make all the proper file and directories as well as
-download the Yelp dataset from Kaggle.
+Run the setup script to create all the proper files and directories. Use the `--skip-yelp` flag to skip downloading the Yelp dataset from Kaggle.
 ```sh
 $ python setup.py --skip-yelp
 ```
@@ -22,7 +21,7 @@ $ python setup.py --skip-yelp
 ### Train and Evaluate
 For the `model_id` parameter, you can select any model from the `transformers` library that supports sentence-pair classification.
 
-Then train the model by running the following command:
+Train the model by running the following command:
 ```sh
 $ python train.py --model-id=distilbert-base-uncased --epochs=4 --batch-size=24 --lr=5e-2
 ```
