@@ -7,12 +7,22 @@ pip install -r requirements.txt
 ```
 
 
-## Run
+## Setup
 First run the setup script to make all the proper file and directories as well as
 download the Yelp dataset from Kaggle.
 ```sh
 python setup.py
 ```
+
+## Train and Evaluate
+For the `model_id` parameter, you can select any model available in the `transformers` as long as it is compat.
+The following are the models I've used on this task:
+* `prajjwal1/bert-tiny`
+* `prajjwal1/bert-small`
+* `distilbert-base-uncased`
+* `bert-base-uncased`
+
+
 
 Then train the model by running the following script,
 ```sh

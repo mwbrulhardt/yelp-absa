@@ -12,6 +12,10 @@ from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AdamW
 
 
+def acc(confusion: np.array) -> float:
+    return confusion.trace() / confusion.sum().sum()
+
+
 def mcc(confusion: np.array) -> float:
     t = confusion.sum(0)
     p = confusion.sum(1)
@@ -28,10 +32,8 @@ def load_data(path: str, model_id: str):
 
     tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-    label_list = ["none", "negative", "neutral", "positive", "conflict"]
-    label_map = {}
-    for (i, label) in enumerate(label_list):
-        label_map[label] = i
+    labels = ["none", "negative", "neutral", "positive", "conflict"]
+    label_map = {label: i for (i, label) in enumerate(labels)}
 
     datasets = {
         "train": None,
@@ -62,10 +64,12 @@ def load_data(path: str, model_id: str):
 def train_absa(config: dict, model_id: str, data_dir: str):
 
     model_name = model_id.replace("/", "-")
+    num_labels = len(config["labels"])
+    numeric_labels = list(range(num_labels))
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = AutoModelForSequenceClassification.from_pretrained(model_id, num_labels=5)
+    model = AutoModelForSequenceClassification.from_pretrained(model_id, num_labels=num_labels)
     model.train()
     model.to(device)
 
@@ -98,14 +102,10 @@ def train_absa(config: dict, model_id: str, data_dir: str):
         for i, (input_ids, attention_mask, labels) in tqdm(enumerate(train_loader), total=total):
             optimizer.zero_grad()
 
-            input_ids = input_ids.to(device)
-            attention_mask = attention_mask.to(device)
-            labels = labels.to(device)
-
             loss, logits = model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                labels=labels
+                input_ids=input_ids.to(device),
+                attention_mask=attention_mask.to(device),
+                labels=labels.to(device)
             )
             loss.backward()
             optimizer.step()
@@ -113,32 +113,29 @@ def train_absa(config: dict, model_id: str, data_dir: str):
         # Validation
         running_loss = 0.0
         steps = 0
-        confusion = np.zeros([5, 5])
+        confusion = np.zeros([num_labels, num_labels])
 
         for i, (input_ids, attention_mask, labels) in enumerate(val_loader):
             with torch.no_grad():
-                input_ids = input_ids.to(device)
-                attention_mask = attention_mask.to(device)
-                labels = labels.to(device)
 
                 loss, logits = model(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    labels=labels
+                    input_ids=input_ids.to(device),
+                    attention_mask=attention_mask.to(device),
+                    labels=labels.to(device)
                 )
 
-                predicted = torch.softmax(logits, -1).argmax(-1)
-
-                y_true = labels.flatten().cpu()
-                y_pred = predicted.cpu()
-                confusion += confusion_matrix(y_true, y_pred, labels=[0, 1, 2, 3, 4])
+                confusion += confusion_matrix(
+                    y_true=labels.flatten().cpu(),
+                    y_pred=torch.softmax(logits, -1).argmax(-1).cpu(),
+                    labels=numeric_labels
+                )
 
                 running_loss += loss.cpu().numpy()
                 steps += 1
 
         summary = dict(
             loss=(running_loss / steps),
-            accuracy=confusion.trace() / confusion.sum().sum(),
+            accuracy=acc(confusion),
             mcc=mcc(confusion)
         )
         print(summary)
@@ -152,27 +149,24 @@ def train_absa(config: dict, model_id: str, data_dir: str):
 
     test_loss = 0
     test_steps = 0
-    confusion = np.zeros([5, 5])
+    confusion = np.zeros([num_labels, num_labels])
     model.eval()
 
     for i, (input_ids, attention_mask, labels) in enumerate(test_loader):
 
         with torch.no_grad():
-            input_ids = input_ids.to(device)
-            attention_mask = attention_mask.to(device)
-            labels = labels.to(device)
 
             loss, logits = model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                labels=labels
+                input_ids=input_ids.to(device),
+                attention_mask=attention_mask.to(device),
+                labels=labels.to(device)
             )
 
-            predicted = torch.softmax(logits, -1).argmax(-1)
-
-            y_true = labels.flatten().cpu()
-            y_pred = predicted.cpu()
-            confusion += confusion_matrix(y_true, y_pred, labels=[0, 1, 2, 3, 4])
+            confusion += confusion_matrix(
+                y_true=labels.flatten().cpu(),
+                y_pred=torch.softmax(logits, -1).argmax(-1).cpu(),
+                labels=numeric_labels
+            )
 
             test_loss += loss.cpu().numpy()
             test_steps += 1
@@ -184,13 +178,12 @@ def train_absa(config: dict, model_id: str, data_dir: str):
     summary = dict(
         model=model_id,
         loss=(test_loss / test_steps),
-        accuracy=confusion.trace() / confusion.sum().sum(),
+        accuracy=acc(confusion),
         mcc=mcc(confusion)
     )
     print(summary)
 
-    labels = ["none", "negative", "neutral", "positive", "conflict"]
-    confusion = pd.DataFrame(confusion, columns=labels)
+    confusion = pd.DataFrame(confusion, columns=config["labels"])
     confusion.to_csv(f"data/{model_name}/confusion.csv", index=False)
 
 
@@ -208,7 +201,8 @@ def main(model_id: str, epochs: int, batch_size: int, lr: float):
         config={
             "epochs": epochs,
             "batch_size": batch_size,
-            "lr": lr
+            "lr": lr,
+            "labels": ["none", "negative", "neutral", "positive", "conflict"]
         },
         model_id=model_id,
         data_dir=os.path.abspath("./data/semeval2014")

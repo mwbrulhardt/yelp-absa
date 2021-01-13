@@ -4,6 +4,7 @@ import zipfile
 from pathlib import Path
 from typing import List
 
+import click
 import pandas as pd
 import torch
 from bs4 import BeautifulSoup
@@ -45,8 +46,9 @@ def preprocess(bs: BeautifulSoup) -> List[dict]:
     return data
 
 
-if __name__ == "__main__":
-
+@click.command()
+@click.option("--skip-yelp", is_flag=True)
+def main(skip_yelp: bool):
     # SemEval-2014
     path = "data/semeval2014"
 
@@ -62,25 +64,30 @@ if __name__ == "__main__":
         frames[k].to_csv(path + f"/{k}.csv", index=False)
 
     # Yelp
-    api = KaggleApi()
-    api.authenticate()
+    if not skip_yelp:
+        api = KaggleApi()
+        api.authenticate()
 
-    data_path = "data/yelp"
-    api.dataset_download_files(
-        dataset="yelp-dataset/yelp-dataset",
-        path=data_path
-    )
+        data_path = "data/yelp"
+        api.dataset_download_files(
+            dataset="yelp-dataset/yelp-dataset",
+            path=data_path
+        )
 
-    zip_path = os.path.join(data_path, "yelp-dataset.zip")
-    with zipfile.ZipFile(zip_path, "r") as zp:
-        zp.extractall(data_path)
-    os.remove(zip_path)
+        zip_path = os.path.join(data_path, "yelp-dataset.zip")
+        with zipfile.ZipFile(zip_path, "r") as zp:
+            zp.extractall(data_path)
+        os.remove(zip_path)
 
-    prefix = "yelp_academic_dataset_"
-    for name in os.listdir(data_path):
-        src = os.path.join(data_path, name)
-        tgt = os.path.join(data_path, name.replace(prefix, ""))
-        os.rename(src, tgt)
+        prefix = "yelp_academic_dataset_"
+        for name in os.listdir(data_path):
+            src = os.path.join(data_path, name)
+            tgt = os.path.join(data_path, name.replace(prefix, ""))
+            os.rename(src, tgt)
 
     # Models
     Path("models").mkdir(parents=True, exist_ok=True)
+
+
+if __name__ == "__main__":
+    main()
