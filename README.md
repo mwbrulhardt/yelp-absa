@@ -1,4 +1,4 @@
-# Yelp: Aspect-Based Sentiment Analysis
+# Where should I eat after the pandemic?: Decision Making with Aspect-Based Sentiment Analysis Using Transformers.
 Exploring the Yelp dataset using Aspect-Based Sentiment Analysis.
 
 ## Installation
@@ -20,23 +20,27 @@ $ python setup.py --skip-yelp
 ```
 
 ### Train and Evaluate
-For the `model_id` parameter, you can select any model available in the `transformers` as long as it is compatible.
+For the `model_id` parameter, you can select any model from the `transformers` library that supports sentence-pair classification.
 
-Then train the model by running the following script,
+Then train the model by running the following command:
 ```sh
 $ python train.py --model-id=distilbert-base-uncased --epochs=4 --batch-size=24 --lr=5e-2
 ```
 
-The following are the models I've used on this task:
+These are the models I've used on this task:
 * `prajjwal1/bert-tiny`
 * `prajjwal1/bert-small`
 * `distilbert-base-uncased`
 * `bert-base-uncased`
 
-I've found `distilbert` to be the overall best suited for this task.
+Of these models, I've found `distilbert` to be the best.
 
 <img src="charts/distilbert-base-uncased/confusion.png" alt="drawing" height="600" width="750"/>
 
+
+## Part 2
+
+Coming soon!
 
 ## References
 * https://arxiv.org/pdf/1903.09588v1.pdf
