@@ -39,7 +39,37 @@ Of these models, I've found `distilbert` to be the best.
 
 ## Part 2
 
-Coming soon!
+The following is code associated with the second article of the 2 part Medium series. Make sure that you have run part 1 before running any of the following. Additionally make sure you have kaggle setup on you computer.
+
+### Setup
+
+The following will download the data from Yelp:
+```sh
+$ python setup.py
+```
+
+### Run
+Run the trained model over all tips in the Yelp dataset using,
+```sh
+$ python run.py --model-id=distilbert-base-uncased --batch-size=15
+```
+
+<img src="charts/distilbert-base-uncased/aspect_pairs.png" alt="drawing" height="600" width="750"/>
+
+
+Generate all charts associated with your trained model, as shown in the Medium article.
+```sh
+$ python make_charts.py --model-id=distilbert-base-uncased
+```
+
+
+Find out your results by choosing your importance weights for each aspect of a restaurant.
+```sh
+$ python find.py --model-id=distilbert-base-uncased --importances=7,9,10,5,5,2
+```
+
+<img src="charts/distilbert-base-uncased/variation_in_answers.png" alt="drawing" height="500" width="900"/>
+
 
 ## References
 * https://arxiv.org/pdf/1903.09588v1.pdf
