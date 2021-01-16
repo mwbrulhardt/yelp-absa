@@ -1,6 +1,9 @@
 # Where should I eat after the pandemic?: Decision Making with Aspect-Based Sentiment Analysis Using Transformers.
 Exploring the Yelp dataset using Aspect-Based Sentiment Analysis.
 
+* [Where should I eat after the pandemic? (Part 1/2)](https://towardsdatascience.com/where-should-i-eat-after-the-pandemic-895731933841)
+* [Where should I eat after the pandemic? (Part 2/2)](https://towardsdatascience.com/where-should-i-eat-after-the-pandemic-part-2-2-3b3498523757)
+
 ## Installation
 
 To install all the required libraries run,
