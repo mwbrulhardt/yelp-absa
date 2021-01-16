@@ -39,7 +39,7 @@ Of these models, I've found `distilbert` to be the best.
 
 ## Part 2
 
-The following is code associated with the second article of the 2 part Medium series. Make sure that you have run part 1 before running any of the following. Additionally make sure you have kaggle setup on you computer.
+The following is code associated with the second article of the 2 part Medium series. Make sure that you have run part 1 before running any of the following. Additionally, make sure you have kaggle setup on your computer.
 
 ### Setup
 
